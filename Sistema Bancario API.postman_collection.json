@@ -1,0 +1,472 @@
+{
+  "info": {
+    "_postman_id": "9a846f5b-7cd3-44a2-89e3-102c6aeb6aa1",
+    "name": "Sistema Bancario API",
+    "description": "Collection profissional e completa para testes de integracao do Sistema Bancario API (Laravel 11). Inclui scripts de automacao para captura de tokens e cenarios de erro reais (ACID / HTTP 422).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52625259"
+  },
+  "item": [
+    {
+      "name": "1. Autenticacao",
+      "item": [
+        {
+          "name": "Registar Novo Cliente (Sucesso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.collectionVariables.set(\"token\", jsonData.token);",
+                  "        console.log(\"Token de Autenticacao capturado automaticamente!\");",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Afonso Shelby\",\n    \"email\": \"afonso@email.com\",\n    \"password\": \"password123\",\n    \"nif\": \"123456789\",\n    \"birth_date\": \"1999-01-01\",\n    \"pin_code\": \"1234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "register"
+              ]
+            },
+            "description": "Cria um novo utilizador no sistema com validacao de NIF, encriptacao de password e PIN, e injeta o token automaticamente nas variaveis da collection."
+          },
+          "response": []
+        },
+        {
+          "name": "Efetuar Login (Obter Novo Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.collectionVariables.set(\"token\", jsonData.token);",
+                  "        console.log(\"Novo Token de Autenticacao atualizado!\");",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"afonso@email.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            },
+            "description": "Autentica um utilizador existente e atualiza a variavel de sessao global do Bearer Token."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints relacionados com o registo, controlo de acessos e geracao de chaves criptograficas de sessao (Laravel Sanctum)."
+    },
+    {
+      "name": "2. Gestao de Contas",
+      "item": [
+        {
+          "name": "Abrir Nova Conta Bancaria",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts"
+              ]
+            },
+            "description": "Cria uma conta bancaria vinculada ao titular autenticado. Gera automaticamente o formato de IBAN PT50 protegido contra duplicados."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar Saldo Atual",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounts/1/balance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "1",
+                "balance"
+              ]
+            },
+            "description": "Retorna o saldo atual com auditoria de seguranca (Bloqueia acessos de terceiros com HTTP 403 Forbidden)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Abertura e monitorizacao de balancos monetarios com suporte a multi-titularidade futura."
+    },
+    {
+      "name": "3. Operacoes Financeiras (Movimentos)",
+      "item": [
+        {
+          "name": "Depositar Fundos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 1250.5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/1/deposit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "1",
+                "deposit"
+              ]
+            },
+            "description": "Injeta dinheiro na conta especificada. Valida se o montante e estritamente positivo."
+          },
+          "response": []
+        },
+        {
+          "name": "Levantamento (Sucesso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 200.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/1/withdraw",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "1",
+                "withdraw"
+              ]
+            },
+            "description": "Efetua a subtracao de capital caso o saldo seja maior ou igual ao montante requisitado."
+          },
+          "response": []
+        },
+        {
+          "name": "Levantamento (Erro - Saldo Insuficiente 422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 9999999.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/1/withdraw",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "1",
+                "withdraw"
+              ]
+            },
+            "description": "Cenario obrigatorio do enunciado. Demonstra a blindagem do saldo rejeitando operacoes ilicitas com o codigo HTTP 422 Unprocessable Entity."
+          },
+          "response": []
+        },
+        {
+          "name": "Transferencia Atomica (Entre Contas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"source_account_id\": 1,\n    \"destination_account_id\": 2,\n    \"amount\": 150.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transfers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfers"
+              ]
+            },
+            "description": "Realiza uma movimentacao segura entre duas entidades distintas (ACID Compliance). Se uma das pontas falhar, ocorre Rollback automatico."
+          },
+          "response": []
+        }
+      ],
+      "description": "Modulo transacional do motor financeiro. Responsavel pela mutacao de saldos e escrita no Livro Razao."
+    },
+    {
+      "name": "4. Extratos e Auditorias",
+      "item": [
+        {
+          "name": "Histórico Completo (Cursor Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounts/1/transactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "1",
+                "transactions"
+              ]
+            },
+            "description": "Exigencia avancada do professor. Usa paginacao por ponteiro de cursor imune a degradacao de performance por tabelas massivas."
+          },
+          "response": []
+        },
+        {
+          "name": "Extrato Filtrado (Dinâmico)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/accounts/1/statement?type=DEPOSIT&start_date=2026-01-01&end_date=2026-12-31",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "1",
+                "statement"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "DEPOSIT",
+                  "description": "Filtro opcional: DEPOSIT, WITHDRAWAL, TRANSFER_OUT, TRANSFER_IN"
+                },
+                {
+                  "key": "start_date",
+                  "value": "2026-01-01",
+                  "description": "Data inicial (AAAA-MM-DD)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-12-31",
+                  "description": "Data limite (AAAA-MM-DD)"
+                }
+              ]
+            },
+            "description": "Permite ao cliente pesquisar por movimentos especificos num intervalo temporal definido."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints analiticos focados em performance e transparência contabilistica."
+    },
+    {
+      "name": "5. Credito e Simuladores",
+      "item": [
+        {
+          "name": "Simulador de Emprestimo (Sistema Frances)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 15000,\n    \"term_months\": 36,\n    \"interest_rate\": 6.25\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/loans/simulate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "loans",
+                "simulate"
+              ]
+            },
+            "description": "Aplica formulas reais de amortizacao para cindir o custo de juros e capital mes a mes ao longo do contrato."
+          },
+          "response": []
+        }
+      ],
+      "description": "Modulo de calculos financeiros e simulacoes comerciais autonomos."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
