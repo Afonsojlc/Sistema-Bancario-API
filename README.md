@@ -81,27 +81,27 @@ Siga os passos abaixo sequencialmente para colocar a API funcional no seu ambien
 ### 1. Descarregar o Projeto
 
 ```bash
-    git clone [https://github.com/afonsojlc/sistema-bancario-api.git](https://github.com/afonsojlc/sistema-bancario-api.git)
+git clone https://github.com/afonsojlc/sistema-bancario-api.git
 ```
 
 
 ```bash
-    cd sistema-bancario-api
+cd sistema-bancario-api
 ```
 
 ### 2. Instalar Dependências do PHP
 
 ```bash
-    composer install
+composer install
 ```
 
 ### 3. Configurar Ficheiro de Ambiente
 
 ```bash
-    cp .env.example .env    
+cp .env.example .env    
 ```
 ```bash
-    php artisan key:generate
+php artisan key:generate
 ```
 
 (Por padrão, o Laravel 11 vem pré-configurado para SQLite. Não necessita de instalar servidores locais pesados de MySQL, a base de dados correrá num ficheiro local isolado gerado no próximo passo).
@@ -109,7 +109,7 @@ Siga os passos abaixo sequencialmente para colocar a API funcional no seu ambien
 ### 4. Executar as Migrations do Sistema
 
 ```bash
-    php artisan migrate
+php artisan migrate
 ```
 
 Nota: Se o terminal perguntar se deseja criar o ficheiro SQLite da base de dados, confirme digitando yes ou y.
@@ -117,7 +117,7 @@ Nota: Se o terminal perguntar se deseja criar o ficheiro SQLite da base de dados
 ### 5. Arrancar o Servidor de Desenvolvimento
 
 ```bash
-    php artisan serve
+php artisan serve
 ```
 
 O servidor ficará ativo em: http://127.0.0.1:8000. As suas rotas de API estarão prontas a responder sob o prefixo /api.
