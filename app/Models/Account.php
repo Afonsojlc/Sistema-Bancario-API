@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Account extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'account_number',
+        'balance',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            // Garante que o Laravel não transforma os cêntimos num formato marado
+            'balance' => 'decimal:4', 
+        ];
+    }
+
+    /**
+     * RELAÇÕES
+     */
+    // Uma conta tem vários donos/utilizadores (Tabela Intermédia)
+    public function users()
+    {
+        return $this->belongsToMany(User::class)->withPivot('role');
+    }
+
+    // Uma conta tem muitas transações
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+}
