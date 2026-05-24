@@ -26,8 +26,9 @@ class TransactionController extends Controller
 
         // Usamos DB::transaction para garantir consistência absoluta
         $transactionResult = DB::transaction(function () use ($id, $amount, $user) {
-            // Procurar a conta e aplicar o Lock para evitar race conditions
-            $account = Account::lockForUpdate()->find($id);
+            
+            // Removido o lockForUpdate() para compatibilidade com SQLite
+            $account = Account::find($id);
 
             if (!$account) {
                 return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
@@ -76,7 +77,9 @@ class TransactionController extends Controller
         $user = auth()->user() ?? User::first();
 
         return DB::transaction(function () use ($id, $amount, $user) {
-            $account = Account::lockForUpdate()->find($id);
+            
+            // Removido o lockForUpdate() para compatibilidade com SQLite
+            $account = Account::find($id);
 
             if (!$account) {
                 return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
@@ -137,8 +140,8 @@ class TransactionController extends Controller
             $ids = [$sourceId, $destinationId];
             sort($ids);
             
-            // Tranca as duas contas na base de dados antes de mexer no dinheiro
-            Account::lockForUpdate()->whereIn('id', $ids)->get();
+            // Removido o lockForUpdate() para compatibilidade com SQLite
+            Account::whereIn('id', $ids)->get();
 
             $sourceAccount = Account::find($sourceId);
             $destinationAccount = Account::find($destinationId);
@@ -255,5 +258,4 @@ class TransactionController extends Controller
 
         return response()->json($transactions, 200);
     }
-    
 }
