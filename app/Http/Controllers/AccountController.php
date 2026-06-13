@@ -18,7 +18,7 @@ class AccountController extends Controller
         // Como implementámos o Sanctum, o utilizador correto vem de: $request->user().
         // No entanto, para vos facilitar os testes no Postman logo no início (antes de configurarem os Tokens),
         // se não houver um utilizador logado, o sistema vai buscar automaticamente o primeiro utilizador da BD.
-        $user = $request->user() ?? User::first();
+        $user = $request->user();
 
         if (!$user) {
             return response()->json([
@@ -76,7 +76,7 @@ class AccountController extends Controller
 
         // Auditoria e Segurança de nível 20: 
         // Não podemos deixar qualquer utilizador ver o saldo de qualquer conta!
-        $user = $request->user() ?? User::first();
+        $user = $request->user();
         
         if ($user && !$account->users()->where('user_id', $user->id)->exists()) {
             return response()->json([
