@@ -109,6 +109,7 @@ class AccountController extends Controller
             'message' => 'Contas bancárias recuperadas com sucesso.',
             'total_accounts' => $accounts->count(),
             'owner' => [
+                'id' => $user->id,
                 'name' => $user->name,
                 'nif' => $user->nif
             ],
