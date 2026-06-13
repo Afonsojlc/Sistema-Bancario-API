@@ -34,6 +34,13 @@ class TransactionController extends Controller
                 return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
             }
 
+            if (!$account->users()->where('user_id', $user->id)->exists()) {
+                return response()->json([
+                    'error' => 'Access Denied',
+                    'message' => 'Não tem permissão para movimentar fundos nesta conta.'
+                ], 403); // 403 Forbidden
+            }
+
             // Atualizar o saldo da conta
             $account->balance += $amount;
             $account->save();
@@ -83,6 +90,12 @@ class TransactionController extends Controller
 
             if (!$account) {
                 return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
+            }
+            if (!$account->users()->where('user_id', $user->id)->exists()) {
+                return response()->json([
+                    'error' => 'Access Denied',
+                    'message' => 'Não tem permissão para movimentar fundos nesta conta.'
+                ], 403); // 403 Forbidden
             }
 
             // ⚠️ EXIGÊNCIA DO ENUNCIADO: Saldo nunca negativo -> Rejeitado com 422
@@ -154,6 +167,14 @@ class TransactionController extends Controller
                 ], 422);
             }
 
+            // Auditoria de Segurança na Transferência: O utilizador é dono da conta de origem?
+            if (!$sourceAccount->users()->where('user_id', $user->id)->exists()) {
+                return response()->json([
+                    'error' => 'Access Denied',
+                    'message' => 'Não tem permissão para transferir dinheiro a partir desta conta.'
+                ], 403);
+            }
+
             // 1. Efetuar o Débito (Tirar dinheiro da conta de origem)
             $sourceAccount->balance -= $amount;
             $sourceAccount->save();
@@ -170,7 +191,7 @@ class TransactionController extends Controller
                 'account_id' => $sourceAccount->id,
                 'user_id' => $user ? $user->id : null,
                 'destination_account_id' => $destinationAccount->id,
-                'reference' => $transferRef,
+                'reference' => $transferRef . '-OUT',
                 'type' => 'TRANSFER_OUT',
                 'amount' => $amount,
                 'balance_after' => $sourceAccount->balance,
@@ -181,7 +202,7 @@ class TransactionController extends Controller
                 'account_id' => $destinationAccount->id,
                 'user_id' => $user ? $user->id : null,
                 'destination_account_id' => null, // Na perspetiva de quem recebe, o destino é ele próprio
-                'reference' => $transferRef,
+                'reference' => $transferRef . '-IN',
                 'type' => 'TRANSFER_IN',
                 'amount' => $amount,
                 'balance_after' => $destinationAccount->balance,
