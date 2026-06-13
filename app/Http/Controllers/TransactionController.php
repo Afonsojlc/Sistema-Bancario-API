@@ -236,6 +236,16 @@ class TransactionController extends Controller
             return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
         }
 
+        $user = $request->user();
+
+        // Auditoria de Segurança: O utilizador autenticado é dono desta conta?
+        if (!$account->users()->where('user_id', $user->id)->exists()) {
+            return response()->json([
+                'error' => 'Access Denied',
+                'message' => 'Não tem permissão para consultar o extrato desta conta.'
+            ], 403);
+        }
+
         // Iniciamos a query ordenada da mais recente para a mais antiga (DESC)
         $query = Transaction::where('account_id', $id)->orderBy('created_at', 'desc');
 
@@ -264,13 +274,24 @@ class TransactionController extends Controller
      * GET /accounts/{id}/transactions
      * Lista completa de transações usando apenas a paginação por cursor.
      */
-    public function history($id)
+    public function history(Request $request, $id)
     {
         $account = Account::find($id);
 
         if (!$account) {
             return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
         }
+
+        $user = $request->user();
+
+        // Auditoria de Segurança: O utilizador autenticado é dono desta conta?
+        if (!$account->users()->where('user_id', $user->id)->exists()) {
+            return response()->json([
+                'error' => 'Access Denied',
+                'message' => 'Não tem permissão para consultar o histórico desta conta.'
+            ], 403);
+        }
+        
 
         // Aqui não há filtros, é apenas o histórico contínuo paginado por cursor
         $transactions = Transaction::where('account_id', $id)
