@@ -62,7 +62,7 @@ class AccountController extends Controller
      * GET /accounts/{id}/balance
      * Retorna o saldo atual da conta especificada.
      */
-    public function balance($id)
+    public function balance(Request $request, $id)
     {
         // Procurar a conta na BD
         $account = Account::find($id);
@@ -76,7 +76,7 @@ class AccountController extends Controller
 
         // Auditoria e Segurança de nível 20: 
         // Não podemos deixar qualquer utilizador ver o saldo de qualquer conta!
-        $user = auth()->user() ?? User::first();
+        $user = $request->user() ?? User::first();
         
         if ($user && !$account->users()->where('user_id', $user->id)->exists()) {
             return response()->json([

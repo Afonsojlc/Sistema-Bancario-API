@@ -22,7 +22,7 @@ class TransactionController extends Controller
         ]);
 
         $amount = (float) $request->amount;
-        $user = auth()->user() ?? User::first();
+        $user = $request->user() ?? User::first();
 
         // Usamos DB::transaction para garantir consistência absoluta
         $transactionResult = DB::transaction(function () use ($id, $amount, $user) {
@@ -74,7 +74,7 @@ class TransactionController extends Controller
         ]);
 
         $amount = (float) $request->amount;
-        $user = auth()->user() ?? User::first();
+        $user = $request->user() ?? User::first();
 
         return DB::transaction(function () use ($id, $amount, $user) {
             
@@ -133,7 +133,7 @@ class TransactionController extends Controller
         $sourceId = $request->source_account_id;
         $destinationId = $request->destination_account_id;
         $amount = (float) $request->amount;
-        $user = auth()->user() ?? User::first();
+        $user = $request->user() ?? User::first();
 
         return DB::transaction(function () use ($sourceId, $destinationId, $amount, $user) {
             // Evitar Deadlocks: Trancar as contas sempre por ordem de ID num sistema bancário
