@@ -91,4 +91,28 @@ class AccountController extends Controller
             'balance' => $account->balance
         ], 200);
     }
+
+    /**
+     * GET /accounts/my-accounts
+     * Lista todas as contas bancárias associadas ao utilizador autenticado.
+     */
+    public function myAccounts(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        // Procurar as contas associadas a este utilizador através da relação na BD
+        // Selecionamos apenas os campos necessários da tabela de contas
+        $accounts = $user->accounts()->get(['accounts.id', 'account_number', 'balance', 'accounts.created_at']);
+
+        return response()->json([
+            'message' => 'Contas bancárias recuperadas com sucesso.',
+            'total_accounts' => $accounts->count(),
+            'owner' => [
+                'name' => $user->name,
+                'nif' => $user->nif
+            ],
+            'accounts' => $accounts
+        ], 200);
+    }
 }

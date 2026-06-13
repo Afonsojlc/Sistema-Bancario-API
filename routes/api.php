@@ -22,6 +22,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Gestão de Contas
     Route::prefix('accounts')->group(function () {
+        Route::get('/my-accounts', [AccountController::class, 'myAccounts']);
         Route::post('/', [AccountController::class, 'store']);
         Route::get('/{id}/balance', [AccountController::class, 'balance']);
         
