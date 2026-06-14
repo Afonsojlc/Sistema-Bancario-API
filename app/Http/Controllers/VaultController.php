@@ -237,4 +237,38 @@ class VaultController extends Controller
             ], 200);
         });
     }
+
+    /**
+     * PATCH /vaults/{id}/spare-change
+     * Liga ou desliga o arredondamento automático nas compras para este cofre.
+     */
+    public function toggleSpareChange(Request $request, $id)
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $vault = Vault::with('account')->findOrFail($id);
+        $account = $vault->account;
+
+        if (!$account->users()->where('user_id', $user->id)->exists()) {
+            return response()->json(['error' => 'Access Denied'], 403);
+        }
+
+        // Regra de Ouro: Só podes ter o Spare Change ativo num cofre de cada vez!
+        // Se estivermos a ligar este, desligamos nos outros todos da mesma conta.
+        if (!$vault->spare_change_active) {
+            Vault::where('account_id', $account->id)->update(['spare_change_active' => false]);
+        }
+
+        // Inverte o estado atual (se estava true fica false, se estava false fica true)
+        $vault->spare_change_active = !$vault->spare_change_active;
+        $vault->save();
+
+        $status = $vault->spare_change_active ? 'ATIVADO' : 'DESATIVADO';
+
+        return response()->json([
+            'message' => "Arredondamento automático (Spare Change) $status para o cofre '{$vault->name}'.",
+            'spare_change_active' => $vault->spare_change_active
+        ], 200);
+    }
 }

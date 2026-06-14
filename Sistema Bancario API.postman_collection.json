@@ -384,6 +384,34 @@
             "description": "Realiza uma movimentacao segura entre duas entidades distintas (ACID Compliance). Se uma das pontas falhar, ocorre Rollback automatico."
           },
           "response": []
+        },
+        {
+          "name": "Pagamento",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 4.20,\n    \"currency\": \"EUR\",\n    \"pin_code\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/2/payment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "2",
+                "payment"
+              ]
+            }
+          },
+          "response": []
         }
       ],
       "description": "Modulo transacional do motor financeiro. Responsavel pela mutacao de saldos e escrita no Livro Razao."
@@ -583,6 +611,25 @@
               "path": [
                 "vaults",
                 "my-vaults"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Spare Change",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vaults/1/spare-change",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vaults",
+                "1",
+                "spare-change"
               ]
             }
           },

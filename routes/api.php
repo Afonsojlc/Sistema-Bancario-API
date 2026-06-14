@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Movimentos
         Route::post('/{id}/deposit', [TransactionController::class, 'deposit']);
+        Route::post('/{id}/payment', [TransactionController::class, 'payment']);
         Route::post('/{id}/withdraw', [TransactionController::class, 'withdraw']);
         
         // Extratos e Histórico
@@ -40,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('/vaults/my-vaults', [VaultController::class, 'myVaults']);
     Route::post('/vaults/{id}/deposit', [VaultController::class, 'deposit']);
+    Route::patch('/vaults/{id}/spare-change', [VaultController::class, 'toggleSpareChange']);
     Route::post('/vaults/{id}/withdraw', [VaultController::class, 'withdraw']);
 
     // Transferências

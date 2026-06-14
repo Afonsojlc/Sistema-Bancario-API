@@ -307,6 +307,145 @@ class TransactionController extends Controller
     }
 
     /**
+     * POST /accounts/{id}/payment
+     * Simula uma compra com cartão multi-moeda e Spare Change!
+     */
+    public function payment(Request $request, $id)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|gt:0',
+            'currency' => 'nullable|string|size:3', // O olho clínico atacou de novo!
+            'pin_code' => 'required|digits:4'
+        ]);
+
+        $amount = (float) $request->amount;
+        $inputCurrency = strtoupper($request->input('currency', ''));
+        
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        // 1. O Escudo de Segurança
+        if (!\Illuminate\Support\Facades\Hash::check($request->pin_code, $user->pin_code)) {
+            return response()->json(['error' => 'Unauthorized', 'message' => 'PIN incorreto.'], 401);
+        }
+
+        return DB::transaction(function () use ($id, $amount, $inputCurrency, $user) {
+            $account = Account::find($id);
+
+            if (!$account) return response()->json(['error' => 'Not Found'], 404);
+            if (!$account->users()->where('user_id', $user->id)->exists()) return response()->json(['error' => 'Access Denied'], 403);
+
+            $accountCurrency = $account->currency ?? 'EUR';
+            if (empty($inputCurrency)) $inputCurrency = $accountCurrency;
+
+            // 1. O Câmbio do Pagamento Principal
+            $convertedPaymentAmount = $amount;
+            $appliedPaymentRate = 1.00;
+
+            if ($inputCurrency !== $accountCurrency) {
+                $cacheKey = "exchange_rate_{$inputCurrency}_{$accountCurrency}";
+                $appliedPaymentRate = Cache::remember($cacheKey, 3600, function () use ($inputCurrency, $accountCurrency) {
+                    $response = \Illuminate\Support\Facades\Http::get("https://api.frankfurter.app/latest", ['from' => $inputCurrency, 'to' => $accountCurrency]);
+                    if ($response->successful()) return $response->json()['rates'][$accountCurrency];
+                    abort(503, 'Serviço de câmbios indisponível.');
+                });
+                $convertedPaymentAmount = $amount * $appliedPaymentRate;
+            }
+
+            // 2. A Matemática do Spare Change (Sempre feita na Moeda da Compra!)
+            $ceilAmount = ceil($amount);
+            $spareChange = round($ceilAmount - $amount, 2);
+
+            $activeVault = \App\Models\Vault::where('account_id', $account->id)->where('spare_change_active', true)->first();
+
+            // Variáveis de controlo do troco
+            $totalAccountDeduction = $convertedPaymentAmount;
+            $spareChangeAccountDeduction = 0;
+            $spareChangeVaultCredit = 0;
+            $vaultCurrency = $accountCurrency; 
+
+            if ($activeVault && $spareChange > 0) {
+                $vaultCurrency = $activeVault->currency;
+                
+                // Quanto vamos deduzir da conta principal para cobrir os trocos? (Usa a mesma taxa do pagamento)
+                $spareChangeAccountDeduction = $spareChange * $appliedPaymentRate;
+                $totalAccountDeduction += $spareChangeAccountDeduction;
+
+                // Quanto vai entrar no cofre? (Se o cofre for numa moeda diferente da compra)
+                $spareChangeVaultCredit = $spareChange;
+                if ($inputCurrency !== $vaultCurrency) {
+                    $cacheKey = "exchange_rate_{$inputCurrency}_{$vaultCurrency}";
+                    $appliedVaultRate = Cache::remember($cacheKey, 3600, function () use ($inputCurrency, $vaultCurrency) {
+                        $response = \Illuminate\Support\Facades\Http::get("https://api.frankfurter.app/latest", ['from' => $inputCurrency, 'to' => $vaultCurrency]);
+                        if ($response->successful()) return $response->json()['rates'][$vaultCurrency];
+                        abort(503, 'Serviço de câmbios indisponível.');
+                    });
+                    $spareChangeVaultCredit = $spareChange * $appliedVaultRate;
+                }
+            }
+
+            if ($account->balance < $totalAccountDeduction) {
+                return response()->json(['error' => 'Unprocessable Entity', 'message' => 'Saldo insuficiente após câmbios e arredondamento.'], 422);
+            }
+
+            // 3. Debitar a Compra Principal e Registar
+            $account->balance -= $convertedPaymentAmount;
+            $account->save();
+
+            $paymentRef = 'PAY-' . strtoupper(Str::random(8)) . '-' . time();
+            Transaction::create([
+                'account_id' => $account->id,
+                'user_id' => $user->id,
+                'reference' => $paymentRef,
+                'type' => 'PAYMENT',
+                'amount' => $convertedPaymentAmount,
+                'original_amount' => $amount,
+                'original_currency' => $inputCurrency,
+                'balance_after' => $account->balance,
+            ]);
+
+            $responseJson = [
+                'message' => 'Pagamento efetuado com sucesso.',
+                'payment_info' => [
+                    'amount_paid' => number_format($amount, 2) . ' ' . $inputCurrency,
+                    'account_debited' => number_format($convertedPaymentAmount, 2) . ' ' . $accountCurrency,
+                ]
+            ];
+
+            // 4. Gravar os Trocos e Mover para o Cofre
+            if ($activeVault && $spareChange > 0) {
+                $account->balance -= $spareChangeAccountDeduction;
+                $account->save();
+
+                $activeVault->balance += $spareChangeVaultCredit;
+                $activeVault->save();
+
+                Transaction::create([
+                    'account_id' => $account->id,
+                    'user_id' => $user->id,
+                    'reference' => 'SC-' . strtoupper(Str::random(8)) . '-' . time(),
+                    'type' => 'SPARE_CHANGE',
+                    'amount' => $spareChangeAccountDeduction,
+                    'original_amount' => $spareChange,
+                    'original_currency' => $inputCurrency,
+                    'balance_after' => $account->balance,
+                ]);
+
+                $responseJson['spare_change_info'] = [
+                    'message' => 'Arredondamento automático aplicado!',
+                    'vault_name' => $activeVault->name,
+                    'spare_change_collected' => number_format($spareChange, 2) . ' ' . $inputCurrency,
+                    'amount_added_to_vault' => number_format($spareChangeVaultCredit, 2) . ' ' . $vaultCurrency,
+                ];
+            }
+
+            $responseJson['new_account_balance'] = number_format($account->balance, 2) . ' ' . $accountCurrency;
+
+            return response()->json($responseJson, 200);
+        });
+    }
+
+    /**
      * GET /accounts/{id}/statement
      */
     public function statement(Request $request, $id)
