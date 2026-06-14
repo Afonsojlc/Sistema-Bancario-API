@@ -285,7 +285,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"amount\": 200.0,\n    \"currency\": \"EUR\"\n}",
+              "raw": "{\n    \"amount\": 200.0,\n    \"currency\": \"EUR\",\n    \"pin_code\": \"1234\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -293,13 +293,13 @@
               }
             },
             "url": {
-              "raw": "{{base_url}}/accounts/1/withdraw",
+              "raw": "{{base_url}}/accounts/2/withdraw",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "accounts",
-                "1",
+                "2",
                 "withdraw"
               ]
             },
@@ -325,7 +325,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"amount\": 9999999.0,\n    \"currency\": \"EUR\"\n}",
+              "raw": "{\n    \"amount\": 9999999.0,\n    \"currency\": \"EUR\",\n    \"pin_code\": \"1234\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -365,7 +365,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"source_account_id\": 1,\n    \"destination_account_id\": 2,\n    \"amount\": 150.0\n}"
+              "raw": "{\n    \"source_account_id\": 1,\n    \"destination_account_id\": 2,\n    \"pin_code\": \"1234\",\n    \"amount\": 150.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/transfers",
@@ -502,6 +507,207 @@
         }
       ],
       "description": "Modulo de calculos financeiros e simulacoes comerciais autonomos."
+    },
+    {
+      "name": "6. Cofres de Poupança",
+      "item": [
+        {
+          "name": "Criar Cofre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status HTTP deve ser 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Verificar criação do cofre\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('vault');",
+                  "    pm.expect(jsonData.vault).to.have.property('name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Férias no Japão\",\n    \"target_amount\": 5000,\n    \"currency\": \"JPY\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/accounts/1/vaults",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "accounts",
+                "1",
+                "vaults"
+              ]
+            },
+            "description": "Cria um novo cofre ligado à conta. Se não enviares o campo 'currency', ele herda automaticamente a moeda da conta principal."
+          },
+          "response": []
+        },
+        {
+          "name": "Os meus cofres",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vaults/my-vaults",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vaults",
+                "my-vaults"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Depositar no Cofre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status HTTP deve ser 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Verificar débito na conta e crédito no cofre\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('vault_balance');",
+                  "    pm.expect(jsonData).to.have.property('account_debited');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/vaults/1/deposit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vaults",
+                "1",
+                "deposit"
+              ]
+            },
+            "description": "Move dinheiro da conta principal para dentro do cofre. Se a moeda for diferente, acede à Frankfurter API e faz o câmbio em tempo real."
+          },
+          "response": []
+        },
+        {
+          "name": "Resgatar do Cofre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status HTTP deve ser 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Verificar resgate do cofre e crédito na conta\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('vault_balance');",
+                  "    pm.expect(jsonData).to.have.property('account_credited');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/vaults/1/withdraw",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vaults",
+                "1",
+                "withdraw"
+              ]
+            },
+            "description": "Retira o dinheiro do cofre e devolve à conta principal. Cria registo no extrato de VAULT_WITHDRAWAL."
+          },
+          "response": []
+        }
+      ],
+      "description": "Módulo de Cofres (Vaults) estilo Revolut. Permite criar objetivos de poupança isolados da conta principal com suporte a Multi-Moeda."
     }
   ],
   "auth": {
