@@ -17,7 +17,7 @@ return new class extends Migration
             
             $table->string('currency', 3)->default('EUR');
 
-            // DECIMAL(15,4) é obrigatório em Fintechs para evitar erros de arredondamento do CPU
+            // DECIMAL(15,4) para evitar erros de arredondamento
             $table->decimal('balance', 15, 4)->default(0); 
             $table->timestamps();
         });

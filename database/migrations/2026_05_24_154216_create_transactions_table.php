@@ -19,10 +19,8 @@ return new class extends Migration
             $table->string('reference')->unique();
             $table->string('type'); 
             
-            // O valor convertido (que mexe no saldo)
             $table->decimal('amount', 15, 4); 
             
-            // NOVO: A memória do que o utilizador pediu originalmente
             $table->decimal('original_amount', 15, 4)->nullable(); 
             $table->string('original_currency', 3)->nullable();    
 

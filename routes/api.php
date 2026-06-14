@@ -12,44 +12,55 @@ use App\Http\Controllers\VaultController;
 |--------------------------------------------------------------------------
 | Rotas da API do Sistema Bancário
 |--------------------------------------------------------------------------
+| A estrutura abaixo espelha a documentação e os testes do Postman.
 */
 
-// 1. ROTAS PÚBLICAS (Não precisam de Token)
+// ========================================================================
+// 1. AUTENTICAÇÃO (Rotas Públicas)
+// ========================================================================
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// 2. ROTAS PRIVADAS (Exigem Token de Autenticação - Sanctum)
+
+// ========================================================================
+// MOTOR BANCÁRIO (Rotas Privadas - Protegidas por Token Sanctum)
+// ========================================================================
 Route::middleware('auth:sanctum')->group(function () {
     
-    // Gestão de Contas
-    Route::prefix('accounts')->group(function () {
-        Route::get('/my-accounts', [AccountController::class, 'myAccounts']);
-        Route::post('/', [AccountController::class, 'store']);
-        Route::get('/{id}/balance', [AccountController::class, 'balance']);
-        
-        // Movimentos
-        Route::post('/{id}/deposit', [TransactionController::class, 'deposit']);
-        Route::post('/{id}/payment', [TransactionController::class, 'payment']);
-        Route::post('/{id}/withdraw', [TransactionController::class, 'withdraw']);
-        
-        // Extratos e Histórico
-        Route::get('/{id}/statement', [TransactionController::class, 'statement']);
-        Route::get('/{id}/transactions', [TransactionController::class, 'history']);
-
-        Route::post('/{accountId}/vaults', [VaultController::class, 'store']);      
-    });
+    // --------------------------------------------------------------------
+    // 2. Gestão de Contas
+    // --------------------------------------------------------------------
+    Route::post('/accounts', [AccountController::class, 'store']);
+    Route::get('/accounts/my-accounts', [AccountController::class, 'myAccounts']);
+    Route::get('/accounts/{id}/balance', [AccountController::class, 'balance']);
     
-    Route::get('/vaults/my-vaults', [VaultController::class, 'myVaults']);
-    Route::post('/vaults/{id}/deposit', [VaultController::class, 'deposit']);
-    Route::patch('/vaults/{id}/spare-change', [VaultController::class, 'toggleSpareChange']);
-    Route::post('/vaults/{id}/withdraw', [VaultController::class, 'withdraw']);
-
-    // Transferências
+    // --------------------------------------------------------------------
+    // 3. Operações Financeiras (Movimentos)
+    // --------------------------------------------------------------------
+    Route::post('/accounts/{id}/deposit', [TransactionController::class, 'deposit']);
+    Route::post('/accounts/{id}/withdraw', [TransactionController::class, 'withdraw']);
     Route::post('/transfers', [TransactionController::class, 'transfer']);
+    Route::post('/accounts/{id}/payment', [TransactionController::class, 'payment']);
+    
+    // --------------------------------------------------------------------
+    // 4. Extratos e Auditorias
+    // --------------------------------------------------------------------
+    Route::get('/accounts/{id}/transactions', [TransactionController::class, 'history']);
+    Route::get('/accounts/{id}/statement', [TransactionController::class, 'statement']);
 
-    // Simulador de Empréstimo (Podes manter público se quiseres, mas faz sentido privado num banco)
+    // --------------------------------------------------------------------
+    // 5. Crédito e Simuladores
+    // --------------------------------------------------------------------
+    // Mantemos protegido, garantindo que só clientes do banco podem simular
     Route::post('/loans/simulate', [LoanController::class, 'simulate']);
 
-
+    // --------------------------------------------------------------------
+    // 6. Cofres de Poupança (Vaults & Spare Change)
+    // --------------------------------------------------------------------
+    Route::post('/accounts/{accountId}/vaults', [VaultController::class, 'store']);
+    Route::get('/vaults/my-vaults', [VaultController::class, 'myVaults']);
+    Route::patch('/vaults/{id}/spare-change', [VaultController::class, 'toggleSpareChange']);
+    Route::post('/vaults/{id}/deposit', [VaultController::class, 'deposit']);
+    Route::post('/vaults/{id}/withdraw', [VaultController::class, 'withdraw']);
     
 });

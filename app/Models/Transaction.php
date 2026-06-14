@@ -9,7 +9,6 @@ class Transaction extends Model
 {
     use HasFactory;
 
-    // Desligamos o updated_at porque uma transação nunca pode ser alterada depois de feita!
     public const UPDATED_AT = null;
 
     protected $fillable = [
@@ -19,8 +18,8 @@ class Transaction extends Model
         'reference',
         'type',
         'amount',
-        'original_amount', // NOVO
-        'original_currency', // NOVO
+        'original_amount', 
+        'original_currency', 
         'balance_after',
     ];
 
@@ -42,13 +41,13 @@ class Transaction extends Model
         return $this->belongsTo(Account::class);
     }
 
-    // Quem fez a transação (Opcional, pois pode ser um débito direto)
+    // Quem fez a transação 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // A conta de destino (Só existe se for transferência)
+    // A conta de destino, só existe se for uma transferência entre contas
     public function destinationAccount()
     {
         return $this->belongsTo(Account::class, 'destination_account_id');

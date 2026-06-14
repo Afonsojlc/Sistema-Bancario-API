@@ -18,7 +18,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
             'nif' => 'required|string|size:9|unique:users,nif',
             'birth_date' => 'required|date|before:today',
-            'pin_code' => 'required|digits:4', // O PIN tem de ter exatos 4 dígitos numéricos
+            'pin_code' => 'required|digits:4', // O PIN tem de ter exatos 4 dígitos
         ]);
 
         $user = User::create([

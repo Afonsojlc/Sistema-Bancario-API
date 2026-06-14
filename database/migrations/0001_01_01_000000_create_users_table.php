@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('nif')->unique(); // O vosso toque profissional
+            $table->string('nif')->unique();
             $table->date('birth_date'); // Data de nascimento
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

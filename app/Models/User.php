@@ -23,9 +23,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'nif',          // Adicionado para os 20 valores
-        'birth_date',   // Adicionado para os 20 valores
-        'pin_code',     // Adicionado para os 20 valores
+        'nif',          
+        'birth_date',   
+        'pin_code',     
     ];
 
     /**
@@ -36,7 +36,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'pin_code',     // NUNCA devolver o PIN na API!
+        'pin_code',     
     ];
 
     /**
@@ -49,13 +49,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'pin_code' => 'hashed', // O PIN também deve ser encriptado como a password
-            'birth_date' => 'date', // Garante que é tratado como data
+            'pin_code' => 'hashed', 
+            'birth_date' => 'date', 
         ];
     }
 
     /**
-     * RELAÇÕES (A magia do Muitos-para-Muitos que falámos!)
+     * RELAÇÕES (A magia do Muitos-para-Muitos)
      */
     public function accounts()
     {

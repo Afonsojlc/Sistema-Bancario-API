@@ -18,7 +18,6 @@ class Account extends Model
     protected function casts(): array
     {
         return [
-            // Garante que o Laravel não transforma os cêntimos num formato marado
             'balance' => 'decimal:4', 
         ];
     }
@@ -26,7 +25,7 @@ class Account extends Model
     /**
      * RELAÇÕES
      */
-    // Uma conta tem vários donos/utilizadores (Tabela Intermédia)
+    // Uma conta tem vários donos/utilizadores 
     public function users()
     {
         return $this->belongsToMany(User::class)->withPivot('role');
@@ -38,7 +37,7 @@ class Account extends Model
         return $this->hasMany(Transaction::class);
     }
 
-    // Uma conta pode ter vários Cofres (Vaults)
+    // Uma conta pode ter vários Cofres 
     public function vaults()
     {
         return $this->hasMany(Vault::class);

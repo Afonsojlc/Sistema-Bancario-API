@@ -8,11 +8,10 @@ class LoanController extends Controller
 {
     /**
      * POST /loans/simulate
-     * Calcula as prestações mensais (Sistema Francês) e gera a tabela de amortização.
+     * Calcula as prestações mensais (Sistema Francês) e cria uma tabela de amortização.
      */
     public function simulate(Request $request)
     {
-        // Adicionado a validação opcional da Moeda
         $request->validate([
             'amount' => 'required|numeric|gt:0',      
             'term_months' => 'required|integer|gt:0', 
@@ -55,7 +54,7 @@ class LoanController extends Controller
 
             $totalInterestPaid += $interestForMonth;
 
-            // Formatação com a moeda escolhida
+            // Formatação do texto com o tipo de moeda escolhido
             $amortizationTable[] = [
                 'month' => $month,
                 'monthly_payment' => number_format($monthlyPayment, 2, '.', '') . ' ' . $currency,

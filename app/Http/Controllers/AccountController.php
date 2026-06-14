@@ -17,10 +17,6 @@ class AccountController extends Controller
     public function store(Request $request)
     {
         
-        // Toque de Expert para os 20 valores:
-        // Como implementámos o Sanctum, o utilizador correto vem de: $request->user().
-        // No entanto, para vos facilitar os testes no Postman logo no início (antes de configurarem os Tokens),
-        // se não houver um utilizador logado, o sistema vai buscar automaticamente o primeiro utilizador da BD.
         $user = $request->user();
 
         if (!$user) {
@@ -34,45 +30,43 @@ class AccountController extends Controller
             $response = Http::get('https://api.frankfurter.app/currencies');
             
             if ($response->successful()) {
-                // Devolve um array só com as siglas: ['AUD', 'BGN', 'BRL', 'CAD', 'CHF', 'EUR', 'USD', ...]
+                // Devolve um array só com as siglas das moedas válidas (EUR, USD, GBP, etc.)
                 return array_keys($response->json());
             }
 
-            // Fallback de segurança: se a API do BCE falhar hoje, permitimos pelo menos estas
+            // Se a API do BCE falhar hoje, permitimos pelo menos estas
             return ['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'AUD', 'CAD'];
         });
 
-        // 2. Transformar o array numa string separada por vírgulas para o Laravel validar
+        // Vai Transformar o array numa string separada por vírgulas para o Laravel validar
         $validCurrenciesString = implode(',', $validCurrencies);
 
-        // 3. Validação Perfeita e Dinâmica!
         $validated = $request->validate([
             'currency' => "nullable|string|size:3|in:{$validCurrenciesString}"
         ]);
 
-        // Regra de Negócio: Gerar um número de conta único e realista (Formato IBAN fictício com prefixo PT50)
+        // Vair criar um número de conta único e realista (Formato IBAN fictício com prefixo PT50)
         do {
-            // Gerar 15 dígitos de forma segura, dígito a dígito (À prova de limites de 32-bit)
             $randomDigits = '';
             for ($i = 0; $i < 15; $i++) {
                 $randomDigits .= random_int(0, 9);
             }
             
-            // Junta o PT50 com os 15 números (e garante que tem 21 caracteres no total)
+            // Junta o PT50 com os 15 números
             $accountNumber = 'PT50' . str_pad($randomDigits, 21, '0', STR_PAD_LEFT);
             
-        } while (Account::where('account_number', $accountNumber)->exists());// Garante blindagem contra duplicados
+        } while (Account::where('account_number', $accountNumber)->exists());
 
         $currency = $validated['currency'] ?? 'EUR';
 
-        // Criar a conta com saldo inicial zero (Decimal 15,4)
+        // Criar a conta com saldo inicial zero 
         $account = Account::create([
             'account_number' => $accountNumber,
             'balance' => 0.0000,
             'currency' => $currency
         ]);
 
-        // A Magia do Muitos-para-Muitos: Ligar este utilizador a esta conta na tabela intermédia
+        // Ligar este utilizador a esta conta na tabela intermédia
         // Definimos o 'role' como 'owner' (dono) porque foi ele que a criou.
         $account->users()->attach($user->id, ['role' => 'owner']);
 
@@ -109,8 +103,7 @@ class AccountController extends Controller
             ], 404);
         }
 
-        // Auditoria e Segurança de nível 20: 
-        // Não podemos deixar qualquer utilizador ver o saldo de qualquer conta!
+        // Verifica se o utilizador autenticado tem permissão para ver o saldo desta conta
         $user = $request->user();
         
         if ($user && !$account->users()->where('user_id', $user->id)->exists()) {
@@ -123,9 +116,8 @@ class AccountController extends Controller
         return response()->json([
             'account_id' => $account->id,
             'account_number' => $account->account_number,
-            'currency' => $account->currency, // <-- Adicionado a moeda
+            'currency' => $account->currency, 
             'balance' => $account->balance,
-            // Toque de Mestre: Uma string já formatada pronta a mostrar no ecrã!
             'formatted_balance' => number_format($account->balance, 2) . ' ' . $account->currency
         ], 200);
     }
@@ -139,10 +131,8 @@ class AccountController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // 1. Adicionado o campo 'currency' à pesquisa!
         $accounts = $user->accounts()->get(['accounts.id', 'account_number', 'currency', 'balance', 'accounts.created_at']);
 
-        // 2. Mapear os resultados para adicionar a formatação bonita em cada conta da lista
         $accounts->map(function ($account) {
             $account->formatted_balance = number_format($account->balance, 2) . ' ' . $account->currency;
             return $account;

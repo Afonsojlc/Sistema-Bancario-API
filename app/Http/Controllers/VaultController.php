@@ -37,7 +37,6 @@ class VaultController extends Controller
                     'formatted_balance' => number_format($vault->balance, 2) . ' ' . $vault->currency,
                     'target_amount' => $vault->target_amount,
                     'spare_change_active' => $vault->spare_change_active,
-                    // Informação de onde este cofre pertence:
                     'associated_account' => [
                         'account_id' => $account->id,
                         'account_number' => $account->account_number,
@@ -155,7 +154,6 @@ class VaultController extends Controller
                 'balance_after' => $account->balance,
             ]);
 
-            // RESPOSTA MELHORADA: Mostra de onde veio e para onde foi!
             return response()->json([
                 'message' => 'Dinheiro transferido da Conta Principal para o Cofre de Poupança com sucesso!', 
                 'details' => [
@@ -225,7 +223,6 @@ class VaultController extends Controller
                 'balance_after' => $account->balance,
             ]);
 
-            // RESPOSTA MELHORADA: Mostra de onde veio e para onde foi!
             return response()->json([
                 'message' => 'Dinheiro resgatado do Cofre para a Conta Principal com sucesso!', 
                 'details' => [
@@ -254,8 +251,8 @@ class VaultController extends Controller
             return response()->json(['error' => 'Access Denied'], 403);
         }
 
-        // Regra de Ouro: Só podes ter o Spare Change ativo num cofre de cada vez!
-        // Se estivermos a ligar este, desligamos nos outros todos da mesma conta.
+        // Só podemos ter o Spare Change ativo num cofre de cada vez
+        // Se estivermos a ligar este, desligamos nos outros todos que pertencem à  mesma conta.
         if (!$vault->spare_change_active) {
             Vault::where('account_id', $account->id)->update(['spare_change_active' => false]);
         }

@@ -99,12 +99,8 @@ class TransactionController extends Controller
     /**
      * POST /accounts/{id}/withdraw
      */
-    /**
-     * POST /accounts/{id}/withdraw
-     */
     public function withdraw(Request $request, $id)
     {
-        // 1. O PIN agora é OBRIGATÓRIO!
         $request->validate([
             'amount' => 'required|numeric|gt:0',
             'currency' => 'nullable|string|size:3',
@@ -117,7 +113,7 @@ class TransactionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // 2. VERIFICAÇÃO DE SEGURANÇA (O PIN ESTÁ CORRETO?)
+        // Verifica se o Pin está correto
         if (!Hash::check($request->pin_code, $user->pin_code)) {
             return response()->json([
                 'error' => 'Unauthorized', 
@@ -126,7 +122,6 @@ class TransactionController extends Controller
         }
 
         return DB::transaction(function () use ($id, $amount, $inputCurrency, $user) {
-            // ... O resto do teu código continua exatamente igual a partir daqui!
             $account = Account::find($id);
 
             if (!$account) return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
@@ -195,7 +190,7 @@ class TransactionController extends Controller
             'source_account_id' => 'required|exists:accounts,id',
             'destination_account_id' => 'required|exists:accounts,id|different:source_account_id',
             'amount' => 'required|numeric|gt:0',
-            'pin_code' => 'required|digits:4' // <-- OBRIGATÓRIO AQUI TAMBÉM
+            'pin_code' => 'required|digits:4'
         ]);
 
         $sourceId = $request->source_account_id;
@@ -205,7 +200,6 @@ class TransactionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // VALIDAÇÃO DE SEGURANÇA
         if (!Hash::check($request->pin_code, $user->pin_code)) {
             return response()->json([
                 'error' => 'Unauthorized', 
@@ -249,7 +243,6 @@ class TransactionController extends Controller
 
             $transferRef = 'TRF-' . strtoupper(Str::random(8)) . '-' . time();
 
-            // 1. Registo de Saída: O "destino" desta transação é a conta de destino
             Transaction::create([
                 'account_id' => $sourceAccount->id,
                 'user_id' => $user ? $user->id : null,
@@ -262,7 +255,6 @@ class TransactionController extends Controller
                 'balance_after' => $sourceAccount->balance,
             ]);
 
-            // 2. Registo de Entrada: O "destino" desta vez atua como a origem da transferência!
             Transaction::create([
                 'account_id' => $destinationAccount->id,
                 'user_id' => $user ? $user->id : null,
@@ -287,7 +279,7 @@ class TransactionController extends Controller
                     'amount_debited' => number_format($amount, 2) . ' ' . $sourceCurrency,
                     'amount_credited' => number_format($convertedAmount, 2) . ' ' . $destCurrency,
                 ],
-                // AQUI ESTÁ O TEU TALÃO COMPLETO:
+
                 'source_account' => [
                     'id' => $sourceAccount->id,
                     'account_number' => $sourceAccount->account_number,
@@ -314,7 +306,7 @@ class TransactionController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|gt:0',
-            'currency' => 'nullable|string|size:3', // O olho clínico atacou de novo!
+            'currency' => 'nullable|string|size:3', 
             'pin_code' => 'required|digits:4'
         ]);
 
@@ -324,7 +316,6 @@ class TransactionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // 1. O Escudo de Segurança
         if (!\Illuminate\Support\Facades\Hash::check($request->pin_code, $user->pin_code)) {
             return response()->json(['error' => 'Unauthorized', 'message' => 'PIN incorreto.'], 401);
         }
@@ -338,7 +329,6 @@ class TransactionController extends Controller
             $accountCurrency = $account->currency ?? 'EUR';
             if (empty($inputCurrency)) $inputCurrency = $accountCurrency;
 
-            // 1. O Câmbio do Pagamento Principal
             $convertedPaymentAmount = $amount;
             $appliedPaymentRate = 1.00;
 
@@ -352,7 +342,7 @@ class TransactionController extends Controller
                 $convertedPaymentAmount = $amount * $appliedPaymentRate;
             }
 
-            // 2. A Matemática do Spare Change (Sempre feita na Moeda da Compra!)
+            // A lógica do Spare Change
             $ceilAmount = ceil($amount);
             $spareChange = round($ceilAmount - $amount, 2);
 
@@ -388,7 +378,7 @@ class TransactionController extends Controller
                 return response()->json(['error' => 'Unprocessable Entity', 'message' => 'Saldo insuficiente após câmbios e arredondamento.'], 422);
             }
 
-            // 3. Debitar a Compra Principal e Registar
+            // Debitar a Compra Principal e Registar
             $account->balance -= $convertedPaymentAmount;
             $account->save();
 
@@ -412,7 +402,7 @@ class TransactionController extends Controller
                 ]
             ];
 
-            // 4. Gravar os Trocos e Mover para o Cofre
+            // Gravar os Trocos e Mover para o Cofre
             if ($activeVault && $spareChange > 0) {
                 $account->balance -= $spareChangeAccountDeduction;
                 $account->save();
@@ -461,7 +451,6 @@ class TransactionController extends Controller
             return response()->json(['error' => 'Access Denied', 'message' => 'Sem permissão.'], 403);
         }
 
-        // CARREGA A CONTA DE DESTINO E OS SEUS TITULARES PARA EVITAR QUERIES A MAIS!
         $query = Transaction::with(['destinationAccount.users'])->where('account_id', $id)->orderBy('created_at', 'desc');
 
         if ($request->has('type')) $query->where('type', $request->query('type'));
@@ -493,7 +482,6 @@ class TransactionController extends Controller
             return response()->json(['error' => 'Access Denied', 'message' => 'Sem permissão.'], 403);
         }
         
-        // CARREGA A CONTA DE DESTINO E OS SEUS TITULARES
         $transactions = Transaction::with(['destinationAccount.users'])
                             ->where('account_id', $id)
                             ->orderBy('created_at', 'desc')
@@ -507,7 +495,7 @@ class TransactionController extends Controller
     }
 
     /**
-     * Helper privado para embelezar as transações do Extrato (Mantendo código limpo/DRY)
+     * Helper privado para formatar transações para o extrato bancário, incluindo lógica de trocos e descrição detalhada.
      */
     private function formatTransactionForStatement($transaction, $account)
     {
@@ -526,13 +514,11 @@ class TransactionController extends Controller
 
         $transaction->formatted_balance_after = number_format($transaction->balance_after, 2) . ' ' . $currency;
 
-        // --- A GRANDE NOVIDADE: Titulares e Descrição (Revolut Style) ---
         if (in_array($transaction->type, ['TRANSFER_OUT', 'TRANSFER_IN']) && $transaction->destinationAccount) {
             $counterpart = $transaction->destinationAccount;
             $counterpartUser = $counterpart->users->first();
             $counterpartName = $counterpartUser ? $counterpartUser->name : 'Desconhecido';
 
-            // Dados crus para quem vai programar o ecrã do telemóvel
             $transaction->counterpart_info = [
                 'name' => $counterpartName,
                 'account_number' => $counterpart->account_number
@@ -554,7 +540,6 @@ class TransactionController extends Controller
         $transaction->description = $titles[$transaction->type] ?? $transaction->type;
     }
 
-        // Limpamos o objeto sujo da base de dados para o JSON final ficar limpo
         unset($transaction->destinationAccount);
 
         return $transaction;
