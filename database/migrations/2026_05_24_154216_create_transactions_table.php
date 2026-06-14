@@ -13,24 +13,21 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            // A conta principal onde ocorreu o movimento
-            $table->foreignId('account_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('account_id')->constrained('accounts');
+            $table->foreignId('user_id')->nullable()->constrained('users');
+            $table->foreignId('destination_account_id')->nullable()->constrained('accounts');
+            $table->string('reference')->unique();
+            $table->string('type'); 
             
-            // Quem fez o movimento (nullable, pois pode ser um débito automático do banco)
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            // O valor convertido (que mexe no saldo)
+            $table->decimal('amount', 15, 4); 
             
-            // A conta de destino (só preenchida se for transferência)
-            $table->foreignId('destination_account_id')->nullable()->constrained('accounts')->nullOnDelete();
-            
-            $table->string('reference')->unique(); // Ex: TRX-2026-ABC
-            $table->string('type'); // 'DEPOSIT', 'WITHDRAW', 'TRANSFER'
-            $table->decimal('amount', 15, 4);
-            
-            // Exigência do enunciado: Saldo após a operação
+            // NOVO: A memória do que o utilizador pediu originalmente
+            $table->decimal('original_amount', 15, 4)->nullable(); 
+            $table->string('original_currency', 3)->nullable();    
+
             $table->decimal('balance_after', 15, 4);
-            
-            // Numa transação, só existe data de criação. Finanças não se "atualizam", anulam-se.
-            $table->timestamp('created_at')->useCurrent(); 
+            $table->timestamps();
         });
     }
 

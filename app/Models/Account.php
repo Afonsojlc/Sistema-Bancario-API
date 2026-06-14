@@ -12,6 +12,7 @@ class Account extends Model
     protected $fillable = [
         'account_number',
         'balance',
+        'currency',
     ];
 
     protected function casts(): array

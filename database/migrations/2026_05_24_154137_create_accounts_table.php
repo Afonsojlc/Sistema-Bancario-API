@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('accounts', function (Blueprint $table) {
             $table->id();
             $table->string('account_number')->unique();
+            
+            $table->string('currency', 3)->default('EUR');
+
             // DECIMAL(15,4) é obrigatório em Fintechs para evitar erros de arredondamento do CPU
             $table->decimal('balance', 15, 4)->default(0); 
             $table->timestamps();

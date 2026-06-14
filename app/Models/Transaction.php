@@ -19,6 +19,8 @@ class Transaction extends Model
         'reference',
         'type',
         'amount',
+        'original_amount', // NOVO
+        'original_currency', // NOVO
         'balance_after',
     ];
 
@@ -26,6 +28,7 @@ class Transaction extends Model
     {
         return [
             'amount' => 'decimal:4',
+            'original_amount' => 'decimal:4',
             'balance_after' => 'decimal:4',
         ];
     }
