@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 
 class TransactionController extends Controller
 {
@@ -98,11 +99,16 @@ class TransactionController extends Controller
     /**
      * POST /accounts/{id}/withdraw
      */
+    /**
+     * POST /accounts/{id}/withdraw
+     */
     public function withdraw(Request $request, $id)
     {
+        // 1. O PIN agora é OBRIGATÓRIO!
         $request->validate([
             'amount' => 'required|numeric|gt:0',
-            'currency' => 'nullable|string|size:3'
+            'currency' => 'nullable|string|size:3',
+            'pin_code' => 'required|digits:4' 
         ]);
 
         $amount = (float) $request->amount;
@@ -111,8 +117,16 @@ class TransactionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
+        // 2. VERIFICAÇÃO DE SEGURANÇA (O PIN ESTÁ CORRETO?)
+        if (!Hash::check($request->pin_code, $user->pin_code)) {
+            return response()->json([
+                'error' => 'Unauthorized', 
+                'message' => 'O código PIN introduzido está incorreto. Operação recusada.'
+            ], 401);
+        }
+
         return DB::transaction(function () use ($id, $amount, $inputCurrency, $user) {
-            
+            // ... O resto do teu código continua exatamente igual a partir daqui!
             $account = Account::find($id);
 
             if (!$account) return response()->json(['error' => 'Not Found', 'message' => 'Conta não encontrada.'], 404);
@@ -135,7 +149,7 @@ class TransactionController extends Controller
             }
 
             if ($account->balance < $convertedAmountToDeduct) {
-                return response()->json(['error' => 'Unprocessable Entity', 'message' => 'Saldo insuficiente após câmbio.'], 422);
+                return response()->json(['error' => 'Unprocessable Entity', 'message' => 'Saldo insuficiente.'], 422);
             }
 
             $account->balance -= $convertedAmountToDeduct;
@@ -181,13 +195,23 @@ class TransactionController extends Controller
             'source_account_id' => 'required|exists:accounts,id',
             'destination_account_id' => 'required|exists:accounts,id|different:source_account_id',
             'amount' => 'required|numeric|gt:0',
+            'pin_code' => 'required|digits:4' // <-- OBRIGATÓRIO AQUI TAMBÉM
         ]);
 
         $sourceId = $request->source_account_id;
         $destinationId = $request->destination_account_id;
         $amount = (float) $request->amount;
+        
         /** @var \App\Models\User $user */
         $user = $request->user();
+
+        // VALIDAÇÃO DE SEGURANÇA
+        if (!Hash::check($request->pin_code, $user->pin_code)) {
+            return response()->json([
+                'error' => 'Unauthorized', 
+                'message' => 'O código PIN introduzido está incorreto. Operação recusada.'
+            ], 401);
+        }
 
         return DB::transaction(function () use ($sourceId, $destinationId, $amount, $user) {
             
