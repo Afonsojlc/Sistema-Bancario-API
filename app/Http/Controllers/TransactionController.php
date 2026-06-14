@@ -349,7 +349,7 @@ class TransactionController extends Controller
     private function formatTransactionForStatement($transaction, $account)
     {
         $currency = $account->currency ?? 'EUR';
-        $prefix = in_array($transaction->type, ['DEPOSIT', 'TRANSFER_IN']) ? '+ ' : '- ';
+        $prefix = in_array($transaction->type, ['DEPOSIT', 'TRANSFER_IN', 'VAULT_WITHDRAWAL']) ? '+ ' : '- ';
 
         $transaction->currency = $currency;
         
@@ -382,12 +382,14 @@ class TransactionController extends Controller
                 $transaction->description = 'Transferência recebida de ' . $counterpartName;
             }
         } else {
-            $titles = [
-                'DEPOSIT' => 'Depósito de Fundos',
-                'WITHDRAWAL' => 'Levantamento no Multibanco'
-            ];
-            $transaction->description = $titles[$transaction->type] ?? $transaction->type;
-        }
+        $titles = [
+            'DEPOSIT' => 'Depósito de Fundos',
+            'WITHDRAWAL' => 'Levantamento no Multibanco',
+            'VAULT_FUNDING' => 'Transferência para o Cofre',
+            'VAULT_WITHDRAWAL' => 'Resgate do Cofre'
+        ];
+        $transaction->description = $titles[$transaction->type] ?? $transaction->type;
+    }
 
         // Limpamos o objeto sujo da base de dados para o JSON final ficar limpo
         unset($transaction->destinationAccount);

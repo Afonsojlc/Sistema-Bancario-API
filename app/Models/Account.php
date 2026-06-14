@@ -37,4 +37,10 @@ class Account extends Model
     {
         return $this->hasMany(Transaction::class);
     }
+
+    // Uma conta pode ter vários Cofres (Vaults)
+    public function vaults()
+    {
+        return $this->hasMany(Vault::class);
+    }
 }
